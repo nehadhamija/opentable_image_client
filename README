@@ -1,0 +1,11 @@
+Image Client
+
+The client is written in AngularJS. And is entirely codoed in index.html.
+
+There are 2 tabs:
+
+1. Upload Image
+It has a form with file input, that accepts files in jpg format. Clicking on upload gets an upload link from the server and directly uploads the image to amazon s3 server.
+
+2. View Images
+The thumbnail versions of uploaded images can be viewed here. It gets list of s3 image urls from the server and renders them. It also registers to an evenetsource end-point on the server, to get updates on any new images in the thumbnail bucket. New images, once uploaded will appear at the bottom.
