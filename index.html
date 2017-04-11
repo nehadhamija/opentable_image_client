@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+	<!-- jQuery library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+
+	<!-- Latest compiled JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+	<body>
+		<div ng-app="myApp" ng-controller="myCtrl">
+			<div class="well well-sm">
+				<div class="breadcrumbs">
+					<span style="cursor: pointer;" ng-click="selected = 'upload'">
+						<strong ng-show="selected=='upload'"> Upload Image </strong>
+						<span ng-hide="selected=='upload'"> Upload Image </span>
+					</span>
+					|
+					<span style="cursor: pointer;" ng-click="selected = 'view'">
+						<strong ng-show="selected=='view'"> View Images</strong>
+						<span ng-hide="selected=='view'"> View Images</span>
+					</span>
+					
+				</div>
+			</div>
+
+			<div ng-show="selected=='upload'">
+				<h4>Choose a jpg file to upload:</h4>
+				<form class="form-inline">
+					<div class="form-group">
+						<input type="file" id="file" name="file" accept="image/jpeg,image/jpg"/>
+					</div>
+					<button type="submit" class="btn btn-primary" ng-click="upload()" ng-disabled="!enabled">Upload</button>
+				</form>
+			</div>
+
+			<div ng-show="selected=='view'">
+				<div ng-repeat="image in images">
+					<img style="float:left; display:inline" ng-src="{{image}}" class="img-thumbnail">
+				</div>
+			</div>
+
+			<script>
+				var app = angular.module('myApp', []);
+				app.controller('myCtrl', function($scope, $http) {
+					$scope.selected = "upload";
+					$scope.enabled = true;
+					$scope.upload = function() {
+						$http.get('http://stark-inlet-74386.herokuapp.com/upload_url').then(function(response) {
+							if(response.status == 200) {
+								$scope.enabled = false;
+								var url = response.data;
+								var xhr = new XMLHttpRequest();
+								var photo = document.getElementById("file");
+								var file = photo.files[0];
+								xhr.file = file;
+								xhr.open('PUT', url, true);
+								xhr.onreadystatechange = function(e) {
+									if(this.readyState==4) {
+										alert("File uploaded");
+										$scope.enabled = true;
+									}
+								};
+								xhr.setRequestHeader("Content-Type","image/jpg");
+								xhr.send(file);
+							}
+							else {
+								alert("Error Uploading")
+							}
+						});	
+					}
+					$scope.images = [];
+					$scope.init = false;
+					$scope.get_images = function() {
+						$http.get('http://stark-inlet-74386.herokuapp.com/images').then(function(response) {
+							if(response.status == 200) {
+								$scope.lines = response.data;
+								for(var i in response.data) {
+									$scope.images.push(response.data[i]);
+								}
+							}
+							$scope.init = true;
+						});	
+					}
+					if(typeof(EventSource) !== "undefined") {
+						$scope.source = new EventSource("http://stark-inlet-74386.herokuapp.com/image_uploaded");
+						$scope.oneventfunc = function(event) {
+							console.log("Received: ", event.data);
+							if($scope.init) {
+								$scope.$apply(function() {
+									if($scope.images.indexOf(event.data) == -1) {
+										$scope.images.push(event.data);
+									}
+								});
+							}
+						}
+						$scope.onerrorfunc = function(err) {	
+						}	
+
+						$scope.source.onmessage = $scope.oneventfunc;
+						$scope.source.onerror = $scope.onerrorfunc;
+					}
+					$scope.get_images();
+				});
+			</script>
+		</div>
+	</body>
+</html>
