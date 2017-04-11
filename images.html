@@ -1,0 +1,52 @@
+<html>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+	<body>
+		<div ng-app="myApp" ng-controller="myCtrl">
+			<div id = "d">
+				<div ng-repeat="image in images">
+					<img ng-src="{{image}}">
+				</div>
+			</div>
+
+			<div id="invisible_button" type="hidden"></div>
+
+			<script>
+				var app = angular.module('myApp', []);
+				app.controller('myCtrl', function($scope, $http) {
+					$scope.images = [];
+					$scope.init = false;
+					$scope.get_images = function() {
+						$http.get('http://stark-inlet-74386.herokuapp.com/images').then(function(response) {
+							if(response.status == 200) {
+								$scope.lines = response.data;
+								for(var i in response.data) {
+									$scope.images.push(response.data[i]);
+								}
+							}
+							$scope.init = true;
+						});	
+					}
+					if(typeof(EventSource) !== "undefined") {
+						$scope.source = new EventSource("http://stark-inlet-74386.herokuapp.com/image_uploaded");
+						$scope.oneventfunc = function(event) {
+							console.log("Received: ", event.data);
+							if($scope.init) {
+								$scope.$apply(function() {
+									if($scope.images.indexOf(event.data) == -1) {
+										$scope.images.push(event.data);
+									}
+								});
+							}
+						}
+						$scope.onerrorfunc = function(err) {	
+						}	
+
+						$scope.source.onmessage = $scope.oneventfunc;
+						$scope.source.onerror = $scope.onerrorfunc;
+					}
+					$scope.get_images();
+				});
+			</script>
+		</div>
+	</body>
+</html>

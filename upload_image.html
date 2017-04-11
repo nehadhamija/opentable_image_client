@@ -1,0 +1,40 @@
+<html>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+	<body>
+		<div ng-app="myApp" ng-controller="myCtrl">
+			<input type="file" id="file" name="file" accept="image/jpeg,image/jpg"/>
+			<button ng-click="upload()" ng-disabled="!enabled">Upload</button>
+
+			<script>
+				var app = angular.module('myApp', []);
+				app.controller('myCtrl', function($scope, $http) {
+					$scope.enabled = true;
+					$scope.upload = function() {
+						$http.get('http://stark-inlet-74386.herokuapp.com/upload_url').then(function(response) {
+							if(response.status == 200) {
+								$scope.enabled = false;
+								var url = response.data;
+								var xhr = new XMLHttpRequest();
+								var photo = document.getElementById("file");
+								var file = photo.files[0];
+								xhr.file = file;
+								xhr.open('PUT', url, true);
+								xhr.onreadystatechange = function(e) {
+									if(this.readyState==4) {
+										alert("File uploaded");
+										$scope.enabled = true;
+									}
+								};
+								xhr.setRequestHeader("Content-Type","image/jpg");
+								xhr.send(file);
+							}
+							else {
+								alert("Error Uploading")
+							}
+						});	
+					}
+				});
+			</script>
+		</div>
+	</body>
+</html>
